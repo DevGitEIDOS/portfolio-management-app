@@ -1284,7 +1284,9 @@
     } else {
         projects.push(projectData);
     }
-
+    console.error('Error cclosing Project Modal:', error);
+    console.log('Error cclosing Project Modal...');
+    
     await saveProjects();
     await loadProjects();
     renderProjects();
