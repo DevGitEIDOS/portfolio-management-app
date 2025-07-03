@@ -967,7 +967,7 @@
         }
 
         function openManageUsersModal() {
-            if (currentUser.role !== 'admin') {
+            if (currentUser.role !== 'manager') {
                 alert('Only administrators can manage users.');
                 return;
             }
@@ -1255,74 +1255,70 @@
             closeModal('userModal');
         });
 
-       document.getElementById('projectForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const projectData = {
-        id: currentProjectId || Date.now().toString(),
-        name: document.getElementById('projectName').value,
-        client: document.getElementById('clientName').value,
-        location: document.getElementById('location').value,
-        projectManager: document.getElementById('projectManager').value,
-        startDate: document.getElementById('startDate').value,
-        endDate: document.getElementById('endDate').value,
-        teamMembers: document.getElementById('teamMembers').value.split(',').map(m => m.trim()),
-        totalEfforts: parseInt(document.getElementById('totalEfforts').value) || 0,
-        status: document.getElementById('projectStatus').value,
-        ragStatus: document.getElementById('ragStatus').value,
-        statusComments: document.getElementById('statusComments').value,
-        lastUpdated: new Date().toISOString().split('T')[0],
-        createdBy: currentUser.id,
-        created_at: currentProjectId ? projects.find(p => p.id === currentProjectId)?.created_at : new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        tasks: currentProjectId ? projects.find(p => p.id === currentProjectId)?.tasks || [] : []
-    };
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const projectData = {
+                id: currentProjectId || Date.now().toString(),
+                name: document.getElementById('projectName').value,
+                client: document.getElementById('clientName').value,
+                location: document.getElementById('location').value,
+                projectManager: document.getElementById('projectManager').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                teamMembers: document.getElementById('teamMembers').value.split(',').map(m => m.trim()),
+                totalEfforts: parseInt(document.getElementById('totalEfforts').value) || 0,
+                status: document.getElementById('projectStatus').value,
+                ragStatus: document.getElementById('ragStatus').value,
+                statusComments: document.getElementById('statusComments').value,
+                lastUpdated: new Date().toISOString().split('T')[0],
+                createdBy: currentUser.id,
+                created_at: currentProjectId ? projects.find(p => p.id === currentProjectId)?.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                tasks: currentProjectId ? projects.find(p => p.id === currentProjectId)?.tasks || [] : []
+            };
 
-    if (currentProjectId) {
-        const index = projects.findIndex(p => p.id === currentProjectId);
-        projects[index] = projectData;
-    } else {
-        projects.push(projectData);
-    }
-    console.error('Error cclosing Project Modal:', error);
-    console.log('Error cclosing Project Modal...');
-    
-    await saveProjects();
-    await loadProjects();
-    renderProjects();
-    closeModal('projectModal');
-});
+            if (currentProjectId) {
+                const index = projects.findIndex(p => p.id === currentProjectId);
+                projects[index] = projectData;
+            } else {
+                projects.push(projectData);
+            }
 
-       document.getElementById('taskForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const project = projects.find(p => p.id === currentProjectId);
-    if (!project) return;
+            await saveProjects();
+            renderProjects();
+            closeModal('projectModal');
+        });
 
-    const taskData = {
-        id: currentTaskId || Date.now().toString(),
-        name: document.getElementById('taskName').value,
-        owner: document.getElementById('taskOwner').value,
-        dueDate: document.getElementById('taskDueDate').value,
-        status: document.getElementById('taskStatus').value,
-        createdDate: new Date().toISOString().split('T')[0],
-        created_at: currentTaskId ? project.tasks.find(t => t.id === currentTaskId)?.created_at : new Date().toISOString(),
-        updated_at: new Date().toISOString()
-    };
+        document.getElementById('taskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
 
-    if (currentTaskId) {
-        const taskIndex = project.tasks.findIndex(t => t.id === currentTaskId);
-        project.tasks[taskIndex] = taskData;
-    } else {
-        if (!project.tasks) project.tasks = [];
-        project.tasks.push(taskData);
-    }
+            const taskData = {
+                id: currentTaskId || Date.now().toString(),
+                name: document.getElementById('taskName').value,
+                owner: document.getElementById('taskOwner').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                status: document.getElementById('taskStatus').value,
+                createdDate: new Date().toISOString().split('T')[0],
+                created_at: currentTaskId ? project.tasks.find(t => t.id === currentTaskId)?.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
 
-    await saveProjects();
-    await loadProjects();
-    renderProjects();
-    closeModal('taskModal');
-}); 
+            if (currentTaskId) {
+                const taskIndex = project.tasks.findIndex(t => t.id === currentTaskId);
+                project.tasks[taskIndex] = taskData;
+            } else {
+                if (!project.tasks) project.tasks = [];
+                project.tasks.push(taskData);
+            }
+
+            await saveProjects();
+            renderProjects();
+            closeModal('taskModal');
+        });
 
         // Utility Functions
         function closeModal(modalId) {
