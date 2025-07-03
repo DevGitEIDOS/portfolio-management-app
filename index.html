@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Portfolio Dashboard</title>
+    <!-- Supabase Client Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: auto;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: 2px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .action-btn-header {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            border: 2px solid #ddd;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn-header:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .import-btn:hover {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .export-btn:hover {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border-color: #2196F3;
+        }
+
+        .action-btn-header.manage-users-btn:hover {
+            background: linear-gradient(45deg, #9C27B0, #7B1FA2);
+            color: white;
+            border-color: #9C27B0;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .add-project-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .add-project-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+            min-height: 400px;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: move;
+            border-left: 5px solid transparent;
+            position: relative;
+            overflow: hidden;
+            height: 580px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-card.dragging {
+            opacity: 0.7;
+            transform: rotate(5deg);
+        }
+
+        .project-card.green { border-left-color: #4CAF50; }
+        .project-card.yellow { border-left-color: #FF9800; }
+        .project-card.red { border-left-color: #F44336; }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .project-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .action-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .project-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .rag-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .rag-green { background-color: #4CAF50; }
+        .rag-yellow { background-color: #FF9800; }
+        .rag-red { background-color: #F44336; }
+
+        .status-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .status-date {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .status-comment {
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .tasks-section {
+            margin-top: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .tasks-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 180px;
+            padding-right: 5px;
+        }
+
+        .tasks-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tasks-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .tasks-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .tasks-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .tasks-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .add-task-btn {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .task-item {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 45px;
+        }
+
+        .task-item.not-started { border-left-color: #9E9E9E; }
+        .task-item.in-progress { border-left-color: #2196F3; }
+        .task-item.on-hold { border-left-color: #FF9800; }
+        .task-item.completed { border-left-color: #4CAF50; }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+            font-size: 0.95rem;
+        }
+
+        .task-meta {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .delete-btn {
+            background: linear-gradient(45deg, #F44336, #D32F2F);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .dashboard-title {
+                font-size: 2rem;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Container -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-card">
+            <h1 class="login-title">Portfolio Dashboard</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" required>
+                </div>
+                <button type="submit" class="submit-btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard Container -->
+    <div class="hidden" id="dashboardContainer">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Project Portfolio Dashboard</h1>
+            <div class="header-actions">
+                <button class="action-btn-header import-btn" onclick="importData()">📥 Import Data</button>
+                <button class="action-btn-header export-btn" onclick="exportData()">💾 Export Data</button>
+                <button class="action-btn-header manage-users-btn" onclick="openManageUsersModal()" id="manageUsersBtn">👥 Manage Users</button>
+                <button class="add-project-btn" onclick="openAddProjectModal()">+ Add New Project</button>
+            </div>
+            <div class="user-info" id="userInfo">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <div class="user-name" id="userName">User</div>
+                    <div class="user-role" id="userRole">Role</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="projects-grid" id="projectsGrid">
+            <!-- Projects will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="projectModalTitle">Add New Project</h2>
+                <button class="close-btn" onclick="closeModal('projectModal')">&times;</button>
+            </div>
+            <form id="projectForm">
+                <div class="form-group">
+                    <label class="form-label">Project Name</label>
+                    <input type="text" class="form-input" id="projectName" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Client Name</label>
+                        <input type="text" class="form-input" id="clientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-input" id="location" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Project Manager</label>
+                        <input type="text" class="form-input" id="projectManager" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Team Members</label>
+                        <input type="text" class="form-input" id="teamMembers" placeholder="Comma separated names">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-input" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-input" id="endDate" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Total Efforts (Hours)</label>
+                        <input type="number" class="form-input" id="totalEfforts">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Project Status</label>
+                        <select class="form-select" id="projectStatus">
+                            <option value="Planning">Planning</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="On Hold">On Hold</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">RAG Status</label>
+                        <select class="form-select" id="ragStatus">
+                            <option value="green">Green - On Track</option>
+                            <option value="yellow">Yellow - At Risk</option>
+                            <option value="red">Red - Critical</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Comments</label>
+                    <textarea class="form-textarea" id="statusComments" placeholder="Add latest status update..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn">Save Project</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="taskModalTitle">Add New Task</h2>
+                <button class="close-btn" onclick="closeModal('taskModal')">&times;</button>
+            </div>
+            <form id="taskForm">
+                <div class="form-group">
+                    <label class="form-label">Task Name</label>
+                    <input type="text" class="form-input" id="taskName" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Task Owner</label>
+                        <input type="text" class="form-input" id="taskOwner" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" class="form-input" id="taskDueDate" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Task Status</label>
+                    <select class="form-select" id="taskStatus">
+                        <option value="not-started">Not Started</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="on-hold">On Hold</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-btn">Save Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Users Modal -->
+    <div class="modal" id="usersModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Manage Team Members</h2>
+                <button class="close-btn" onclick="closeModal('usersModal')">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <button class="add-project-btn" onclick="openAddUserModal()" style="width: auto;">+ Add New User</button>
+            </div>
+            <div id="usersList" style="max-height: 400px; overflow-y: auto;">
+                <!-- Users will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="userModalTitle">Add New User</h2>
+                <button class="close-btn" onclick="closeModal('userModal')">&times;</button>
+            </div>
+            <form id="userForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" class="form-input" id="userFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" class="form-input" id="userLastName" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="userEmail" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="userPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="userRole">
+                            <option value="admin">Admin</option>
+                            <option value="manager">Project Manager</option>
+                            <option value="member">Team Member</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Save User</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        // For production, use environment variables instead of hardcoded values
+        const SUPABASE_URL = window.SUPABASE_URL || 'https://qainnaxkfufbbkdkjtgh.supabase.co';
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhaW5uYXhrZnVmYmJrZGtqdGdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNjYxODgsImV4cCI6MjA2Njk0MjE4OH0.TUaIHVWTOMh_4NZavOVfM_cFyVUB3qpEK3GN8B-yyXk';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let projects = [];
+        let users = [];
+        let currentUser = null;
+        let currentProjectId = null;
+        let currentTaskId = null;
+        let currentUserId = null;
+        let draggedElement = null;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadUsers();
+            await loadProjects();
+            checkAuth();
+        });
+
+        // Authentication Functions
+        function checkAuth() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('loginContainer').classList.remove('hidden');
+            document.getElementById('dashboardContainer').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('dashboardContainer').classList.remove('hidden');
+            updateUserInfo();
+            renderProjects();
+        }
+
+        function updateUserInfo() {
+            if (currentUser) {
+                document.getElementById('userName').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+                document.getElementById('userRole').textContent = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1);
+                document.getElementById('userAvatar').textContent = currentUser.firstName.charAt(0) + currentUser.lastName.charAt(0);
+                
+                // Show/hide admin features
+                const manageUsersBtn = document.getElementById('manageUsersBtn');
+                if (currentUser.role === 'admin') {
+                    manageUsersBtn.style.display = 'block';
+                } else {
+                    manageUsersBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showLogin();
+        }
+
+        // Database Functions
+        async function loadUsers() {
+            try {
+                console.log('Loading users from Supabase...');
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: true });
+
+                if (error) {
+                    console.error('Error loading users from Supabase:', error);
+                    console.log('Falling back to localStorage...');
+                    // Fallback to localStorage if database fails
+                    const savedUsers = localStorage.getItem('users');
+                    if (savedUsers) {
+                        users = JSON.parse(savedUsers);
+                        console.log('Loaded users from localStorage:', users);
+                    } else {
+                        console.log('No users in localStorage, creating default admin...');
+                        // Initialize with default admin user
+                        users = [
+                            {
+                                id: '1',
+                                firstName: 'Admin',
+                                lastName: 'User',
+                                email: 'admin@company.com',
+                                password: 'admin123',
+                                role: 'admin',
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            }
+                        ];
+                        await saveUsers();
+                    }
+                } else {
+                    console.log('Successfully loaded users from Supabase:', data);
+                    users = data || [];
+                    // If no users exist, create default admin
+                    if (users.length === 0) {
+                        console.log('No users in database, creating default admin...');
+                        await createDefaultAdmin();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                console.log('Falling back to localStorage due to error...');
+                // Fallback to localStorage
+                const savedUsers = localStorage.getItem('users');
+                if (savedUsers) {
+                    users = JSON.parse(savedUsers);
+                } else {
+                    // Create default admin in localStorage
+                    users = [
+                        {
+                            id: '1',
+                            firstName: 'Admin',
+                            lastName: 'User',
+                            email: 'admin@company.com',
+                            password: 'admin123',
+                            role: 'admin',
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }
+                    ];
+                    localStorage.setItem('users', JSON.stringify(users));
+                }
+            }
+        }
+
+        async function saveUsers() {
+            try {
+                // Save to Supabase
+                const { error } = await supabase
+                    .from('users')
+                    .upsert(users, { onConflict: 'id' });
+
+                if (error) {
+                    console.error('Error saving users to database:', error);
+                }
+                
+                // Also save to localStorage as backup
+                localStorage.setItem('users', JSON.stringify(users));
+            } catch (error) {
+                console.error('Error saving users:', error);
+                // Fallback to localStorage only
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+        }
+
+        async function createDefaultAdmin() {
+            const defaultAdmin = {
+                id: '1',
+                firstName: 'Admin',
+                lastName: 'User',
+                email: 'admin@company.com',
+                password: 'admin123',
+                role: 'admin',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            try {
+                console.log('Creating default admin in Supabase...');
+                const { error } = await supabase
+                    .from('users')
+                    .insert([defaultAdmin]);
+
+                if (error) {
+                    console.error('Error creating default admin in Supabase:', error);
+                    console.log('Creating default admin in localStorage instead...');
+                    // Fallback to localStorage
+                    users.push(defaultAdmin);
+                    localStorage.setItem('users', JSON.stringify(users));
+                } else {
+                    console.log('Successfully created default admin in Supabase');
+                    users.push(defaultAdmin);
+                }
+            } catch (error) {
+                console.error('Error creating default admin:', error);
+                console.log('Creating default admin in localStorage instead...');
+                // Fallback to localStorage
+                users.push(defaultAdmin);
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+        }
+
+        function openManageUsersModal() {
+            if (currentUser.role !== 'admin') {
+                alert('Only administrators can manage users.');
+                return;
+            }
+            renderUsersList();
+            document.getElementById('usersModal').classList.add('active');
+        }
+
+        function openAddUserModal() {
+            currentUserId = null;
+            document.getElementById('userModalTitle').textContent = 'Add New User';
+            document.getElementById('userForm').reset();
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        function openEditUserModal(userId) {
+            currentUserId = userId;
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('userModalTitle').textContent = 'Edit User';
+            document.getElementById('userFirstName').value = user.firstName;
+            document.getElementById('userLastName').value = user.lastName;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userPassword').value = ''; // Don't show password
+            document.getElementById('userPassword').required = false; // Make password optional for editing
+            
+            document.getElementById('userModal').classList.add('active');
+        }
+
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    // Delete from Supabase
+                    const { error } = await supabase
+                        .from('users')
+                        .delete()
+                        .eq('id', userId);
+
+                    if (error) {
+                        console.error('Error deleting user from database:', error);
+                    }
+
+                    // Remove from local array
+                    users = users.filter(u => u.id !== userId);
+                    saveUsers();
+                    renderUsersList();
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    // Fallback to local deletion
+                    users = users.filter(u => u.id !== userId);
+                    saveUsers();
+                    renderUsersList();
+                }
+            }
+        }
+
+        // Permission checking functions
+        function canEditProject(project) {
+            return currentUser.role === 'admin' || 
+                   project.createdBy === currentUser.id ||
+                   project.projectManager === `${currentUser.firstName} ${currentUser.lastName}`;
+        }
+
+        function canDeleteProject(project) {
+            return currentUser.role === 'admin' || project.createdBy === currentUser.id;
+        }
+
+        function renderUsersList() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+
+            users.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = 'project-card';
+                userCard.style.height = 'auto';
+                userCard.style.marginBottom = '15px';
+                
+                userCard.innerHTML = `
+                    <div class="project-header">
+                        <div class="project-name">${user.firstName} ${user.lastName}</div>
+                        <div class="project-actions">
+                            <button class="action-btn" onclick="openEditUserModal('${user.id}')" title="Edit">✏️</button>
+                            <button class="action-btn" onclick="deleteUser('${user.id}')" title="Delete" ${user.id === currentUser.id ? 'disabled' : ''}>🗑️</button>
+                        </div>
+                    </div>
+                    <div class="project-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value">${user.email}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Role</div>
+                            <div class="detail-value">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</div>
+                        </div>
+                    </div>
+                `;
+
+                usersList.appendChild(userCard);
+            });
+        }
+
+        // Project Management Functions
+        function openAddProjectModal() {
+            currentProjectId = null;
+            document.getElementById('projectModalTitle').textContent = 'Add New Project';
+            document.getElementById('projectForm').reset();
+            
+            // Set project manager to current user if they're a manager
+            if (currentUser.role === 'manager') {
+                document.getElementById('projectManager').value = `${currentUser.firstName} ${currentUser.lastName}`;
+            }
+            
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        function openEditProjectModal(projectId) {
+            currentProjectId = projectId;
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            document.getElementById('projectModalTitle').textContent = 'Edit Project';
+            document.getElementById('projectName').value = project.name;
+            document.getElementById('clientName').value = project.client;
+            document.getElementById('location').value = project.location;
+            document.getElementById('projectManager').value = project.projectManager || '';
+            document.getElementById('startDate').value = project.startDate;
+            document.getElementById('endDate').value = project.endDate;
+            document.getElementById('teamMembers').value = project.teamMembers.join(', ');
+            document.getElementById('totalEfforts').value = project.totalEfforts;
+            document.getElementById('projectStatus').value = project.status;
+            document.getElementById('ragStatus').value = project.ragStatus;
+            document.getElementById('statusComments').value = project.statusComments;
+            
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        async function deleteProject(projectId) {
+            if (confirm('Are you sure you want to delete this project?')) {
+                try {
+                    // Delete tasks first
+                    const { error: tasksError } = await supabase
+                        .from('tasks')
+                        .delete()
+                        .eq('project_id', projectId);
+
+                    if (tasksError) {
+                        console.error('Error deleting tasks:', tasksError);
+                    }
+
+                    // Delete project
+                    const { error: projectError } = await supabase
+                        .from('projects')
+                        .delete()
+                        .eq('id', projectId);
+
+                    if (projectError) {
+                        console.error('Error deleting project:', projectError);
+                    }
+
+                    // Remove from local array
+                    projects = projects.filter(p => p.id !== projectId);
+                    saveProjects();
+                    renderProjects();
+                } catch (error) {
+                    console.error('Error deleting project:', error);
+                    // Fallback to local deletion
+                    projects = projects.filter(p => p.id !== projectId);
+                    saveProjects();
+                    renderProjects();
+                }
+            }
+        }
+
+        // Task Management Functions
+        function openAddTaskModal(projectId) {
+            currentProjectId = projectId;
+            currentTaskId = null;
+            document.getElementById('taskModalTitle').textContent = 'Add New Task';
+            document.getElementById('taskForm').reset();
+            document.getElementById('taskModal').classList.add('active');
+        }
+
+        function openEditTaskModal(projectId, taskId) {
+            currentProjectId = projectId;
+            currentTaskId = taskId;
+            const project = projects.find(p => p.id === projectId);
+            const task = project.tasks.find(t => t.id === taskId);
+            
+            document.getElementById('taskModalTitle').textContent = 'Edit Task';
+            document.getElementById('taskName').value = task.name;
+            document.getElementById('taskOwner').value = task.owner;
+            document.getElementById('taskDueDate').value = task.dueDate;
+            document.getElementById('taskStatus').value = task.status;
+            
+            document.getElementById('taskModal').classList.add('active');
+        }
+
+        async function deleteTask(projectId, taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                try {
+                    // Delete from Supabase
+                    const { error } = await supabase
+                        .from('tasks')
+                        .delete()
+                        .eq('id', taskId);
+
+                    if (error) {
+                        console.error('Error deleting task from database:', error);
+                    }
+
+                    // Remove from local array
+                    const project = projects.find(p => p.id === projectId);
+                    project.tasks = project.tasks.filter(t => t.id !== taskId);
+                    saveProjects();
+                    renderProjects();
+                } catch (error) {
+                    console.error('Error deleting task:', error);
+                    // Fallback to local deletion
+                    const project = projects.find(p => p.id === projectId);
+                    project.tasks = project.tasks.filter(t => t.id !== taskId);
+                    saveProjects();
+                    renderProjects();
+                }
+            }
+        }
+
+        // Form Handlers
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            console.log('Login attempt:', { email, password });
+            console.log('Available users:', users);
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showDashboard();
+            } else {
+                // Try to create default admin if no users exist
+                if (users.length === 0) {
+                    console.log('No users found, creating default admin...');
+                    await createDefaultAdmin();
+                    // Try login again
+                    const defaultUser = users.find(u => u.email === email && u.password === password);
+                    if (defaultUser) {
+                        currentUser = defaultUser;
+                        localStorage.setItem('currentUser', JSON.stringify(defaultUser));
+                        showDashboard();
+                        return;
+                    }
+                }
+                alert('Invalid email or password. Please try again.\n\nDefault credentials:\nEmail: admin@company.com\nPassword: admin123');
+            }
+        });
+
+        document.getElementById('userForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userData = {
+                id: currentUserId || Date.now().toString(),
+                firstName: document.getElementById('userFirstName').value,
+                lastName: document.getElementById('userLastName').value,
+                email: document.getElementById('userEmail').value,
+                password: document.getElementById('userPassword').value || users.find(u => u.id === currentUserId)?.password,
+                role: document.getElementById('userRole').value,
+                created_at: currentUserId ? users.find(u => u.id === currentUserId)?.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            if (currentUserId) {
+                const index = users.findIndex(u => u.id === currentUserId);
+                users[index] = userData;
+            } else {
+                users.push(userData);
+            }
+
+            await saveUsers();
+            renderUsersList();
+            closeModal('userModal');
+        });
+
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const projectData = {
+                id: currentProjectId || Date.now().toString(),
+                name: document.getElementById('projectName').value,
+                client: document.getElementById('clientName').value,
+                location: document.getElementById('location').value,
+                projectManager: document.getElementById('projectManager').value,
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                teamMembers: document.getElementById('teamMembers').value.split(',').map(m => m.trim()),
+                totalEfforts: parseInt(document.getElementById('totalEfforts').value) || 0,
+                status: document.getElementById('projectStatus').value,
+                ragStatus: document.getElementById('ragStatus').value,
+                statusComments: document.getElementById('statusComments').value,
+                lastUpdated: new Date().toISOString().split('T')[0],
+                createdBy: currentUser.id,
+                created_at: currentProjectId ? projects.find(p => p.id === currentProjectId)?.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                tasks: currentProjectId ? projects.find(p => p.id === currentProjectId)?.tasks || [] : []
+            };
+
+            if (currentProjectId) {
+                const index = projects.findIndex(p => p.id === currentProjectId);
+                projects[index] = projectData;
+            } else {
+                projects.push(projectData);
+            }
+
+            await saveProjects();
+            renderProjects();
+            closeModal('projectModal');
+        });
+
+        document.getElementById('taskForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const project = projects.find(p => p.id === currentProjectId);
+            if (!project) return;
+
+            const taskData = {
+                id: currentTaskId || Date.now().toString(),
+                name: document.getElementById('taskName').value,
+                owner: document.getElementById('taskOwner').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                status: document.getElementById('taskStatus').value,
+                createdDate: new Date().toISOString().split('T')[0],
+                created_at: currentTaskId ? project.tasks.find(t => t.id === currentTaskId)?.created_at : new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            if (currentTaskId) {
+                const taskIndex = project.tasks.findIndex(t => t.id === currentTaskId);
+                project.tasks[taskIndex] = taskData;
+            } else {
+                if (!project.tasks) project.tasks = [];
+                project.tasks.push(taskData);
+            }
+
+            await saveProjects();
+            renderProjects();
+            closeModal('taskModal');
+        });
+
+        // Utility Functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function saveProjects() {
+            // Using in-memory storage instead of localStorage
+            // Projects are saved in the global projects array
+        }
+
+        async function loadProjects() {
+            try {
+                const { data: projectsData, error: projectsError } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (projectsError) {
+                    console.error('Error loading projects:', projectsError);
+                    // Fallback to localStorage
+                    const savedProjects = localStorage.getItem('projects');
+                    if (savedProjects) {
+                        projects = JSON.parse(savedProjects);
+                    } else {
+                        projects = [];
+                    }
+                } else {
+                    projects = projectsData || [];
+                    
+                    // Load tasks for each project
+                    for (let project of projects) {
+                        const { data: tasksData, error: tasksError } = await supabase
+                            .from('tasks')
+                            .select('*')
+                            .eq('project_id', project.id)
+                            .order('created_date', { ascending: true });
+
+                        if (!tasksError && tasksData) {
+                            project.tasks = tasksData;
+                        } else {
+                            project.tasks = [];
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                // Fallback to localStorage
+                const savedProjects = localStorage.getItem('projects');
+                if (savedProjects) {
+                    projects = JSON.parse(savedProjects);
+                } else {
+                    projects = [];
+                }
+            }
+        }
+
+        async function saveProjects() {
+            try {
+                // Save projects to Supabase
+                for (let project of projects) {
+                    const projectData = {
+                        id: project.id,
+                        name: project.name,
+                        client: project.client,
+                        location: project.location,
+                        project_manager: project.projectManager,
+                        start_date: project.startDate,
+                        end_date: project.endDate,
+                        team_members: project.teamMembers,
+                        total_efforts: project.totalEfforts,
+                        status: project.status,
+                        rag_status: project.ragStatus,
+                        status_comments: project.statusComments,
+                        last_updated: project.lastUpdated,
+                        created_by: project.createdBy,
+                        created_at: project.created_at || new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+
+                    const { error: projectError } = await supabase
+                        .from('projects')
+                        .upsert(projectData, { onConflict: 'id' });
+
+                    if (projectError) {
+                        console.error('Error saving project:', projectError);
+                    }
+
+                    // Save tasks for this project
+                    if (project.tasks && project.tasks.length > 0) {
+                        for (let task of project.tasks) {
+                            const taskData = {
+                                id: task.id,
+                                project_id: project.id,
+                                name: task.name,
+                                owner: task.owner,
+                                due_date: task.dueDate,
+                                status: task.status,
+                                created_date: task.createdDate,
+                                created_at: task.created_at || new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            };
+
+                            const { error: taskError } = await supabase
+                                .from('tasks')
+                                .upsert(taskData, { onConflict: 'id' });
+
+                            if (taskError) {
+                                console.error('Error saving task:', taskError);
+                            }
+                        }
+                    }
+                }
+
+                // Also save to localStorage as backup
+                localStorage.setItem('projects', JSON.stringify(projects));
+            } catch (error) {
+                console.error('Error saving projects:', error);
+                // Fallback to localStorage only
+                localStorage.setItem('projects', JSON.stringify(projects));
+            }
+        }
+
+        function renderProjects() {
+            const grid = document.getElementById('projectsGrid');
+            grid.innerHTML = '';
+
+            // Filter projects based on user role
+            let filteredProjects = projects;
+            if (currentUser.role === 'member') {
+                // Team members can only see projects they're assigned to
+                filteredProjects = projects.filter(project => 
+                    project.teamMembers.includes(`${currentUser.firstName} ${currentUser.lastName}`) ||
+                    project.projectManager === `${currentUser.firstName} ${currentUser.lastName}`
+                );
+            } else if (currentUser.role === 'manager') {
+                // Managers can see projects they manage or created
+                filteredProjects = projects.filter(project => 
+                    project.projectManager === `${currentUser.firstName} ${currentUser.lastName}` ||
+                    project.createdBy === currentUser.id
+                );
+            }
+            // Admins can see all projects
+
+            filteredProjects.forEach(project => {
+                const projectCard = document.createElement('div');
+                projectCard.className = `project-card ${project.ragStatus}`;
+                projectCard.draggable = true;
+                projectCard.dataset.projectId = project.id;
+                
+                projectCard.innerHTML = `
+                    <div class="project-header">
+                        <div class="project-name">${project.name}</div>
+                        <div class="project-actions">
+                            <button class="action-btn" onclick="openEditProjectModal('${project.id}')" title="Edit" ${canEditProject(project) ? '' : 'disabled'}>✏️</button>
+                            <button class="action-btn" onclick="deleteProject('${project.id}')" title="Delete" ${canDeleteProject(project) ? '' : 'disabled'}>🗑️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="project-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Client</div>
+                            <div class="detail-value">${project.client}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Location</div>
+                            <div class="detail-value">${project.location}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Project Manager</div>
+                            <div class="detail-value">${project.projectManager || 'Not assigned'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Start Date</div>
+                            <div class="detail-value">${project.startDate}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">End Date</div>
+                            <div class="detail-value">${project.endDate}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Team Size</div>
+                            <div class="detail-value">${project.teamMembers.length} members</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Total Efforts</div>
+                            <div class="detail-value">${project.totalEfforts} hours</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value">${project.status} <span class="rag-status rag-${project.ragStatus}"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="status-section">
+                        <div class="status-header">
+                            <strong>Latest Update</strong>
+                            <span class="status-date">${project.lastUpdated}</span>
+                        </div>
+                        <div class="status-comment">${project.statusComments || 'No status update available.'}</div>
+                    </div>
+
+                    <div class="tasks-section">
+                        <div class="tasks-header">
+                            <div class="tasks-title">Tasks (${project.tasks?.length || 0})</div>
+                            <button class="add-task-btn" onclick="openAddTaskModal('${project.id}')">+ Add Task</button>
+                        </div>
+                        ${renderTasks(project.tasks || [], project.id)}
+                    </div>
+                `;
+
+                // Add drag and drop event listeners
+                projectCard.addEventListener('dragstart', handleDragStart);
+                projectCard.addEventListener('dragend', handleDragEnd);
+
+                grid.appendChild(projectCard);
+            });
+
+            // Add drop zone listeners
+            grid.addEventListener('dragover', handleDragOver);
+            grid.addEventListener('drop', handleDrop);
+        }
+
+        function renderTasks(tasks, projectId) {
+            if (!tasks || tasks.length === 0) {
+                return '<div class="tasks-container"><div style="color: #999; font-style: italic; padding: 10px; text-align: center;">No tasks added yet.</div></div>';
+            }
+
+            // Sort tasks by creation date (ascending) and take top 3
+            const sortedTasks = tasks
+                .sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate))
+                .slice(0, 3);
+
+            const tasksHtml = sortedTasks.map(task => `
+                <div class="task-item ${task.status}">
+                    <div class="task-info">
+                        <div class="task-name">${task.name}</div>
+                        <div class="task-meta">Owner: ${task.owner} | Due: ${task.dueDate} | Status: ${task.status.replace('-', ' ')}</div>
+                    </div>
+                    <div class="task-actions">
+                        <button class="action-btn" onclick="openEditTaskModal('${projectId}', '${task.id}')" title="Edit">✏️</button>
+                        <button class="action-btn" onclick="deleteTask('${projectId}', '${task.id}')" title="Delete">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const moreTasksIndicator = tasks.length > 3 ? 
+                `<div style="color: #666; font-size: 0.8rem; text-align: center; padding: 5px; font-style: italic;">
+                    +${tasks.length - 3} more tasks
+                </div>` : '';
+
+            return `<div class="tasks-container">${tasksHtml}${moreTasksIndicator}</div>`;
+        }
+
+        // Export/Import Functions
+        function exportData() {
+            const dataStr = JSON.stringify(projects, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `project_portfolio_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const importedData = JSON.parse(e.target.result);
+                            if (Array.isArray(importedData) && importedData.length > 0) {
+                                if (confirm('This will replace all current projects. Are you sure?')) {
+                                    projects = importedData;
+                                    renderProjects();
+                                    alert('Data imported successfully!');
+                                }
+                            } else {
+                                alert('Invalid file format. Please select a valid project portfolio JSON file.');
+                            }
+                        } catch (error) {
+                            alert('Error reading file. Please make sure it\'s a valid JSON file.');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // Drag and Drop Functions
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.outerHTML);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            if (draggedElement && e.target !== draggedElement) {
+                const grid = document.getElementById('projectsGrid');
+                const allCards = [...grid.children];
+                const draggedIndex = allCards.indexOf(draggedElement);
+                
+                let targetIndex = allCards.length;
+                for (let i = 0; i < allCards.length; i++) {
+                    const rect = allCards[i].getBoundingClientRect();
+                    const center = rect.top + rect.height / 2;
+                    if (e.clientY < center) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+
+                // Reorder projects array
+                const [movedProject] = projects.splice(draggedIndex, 1);
+                projects.splice(targetIndex, 0, movedProject);
+                
+                await saveProjects();
+                renderProjects();
+            }
+        }
+
+        // Close modals on outside click
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+
+        // Test database connection
+        async function testDatabaseConnection() {
+            console.log('Testing Supabase connection...');
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    console.error('Database connection failed:', error);
+                    return false;
+                } else {
+                    console.log('Database connection successful');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Database connection error:', error);
+                return false;
+            }
+        }
+
+        // Add test button to login form for debugging
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const testButton = document.createElement('button');
+            testButton.type = 'button';
+            testButton.textContent = 'Test Database Connection';
+            testButton.style.cssText = 'background: #ff9800; color: white; border: none; padding: 10px; border-radius: 8px; margin-top: 10px; cursor: pointer;';
+            testButton.onclick = testDatabaseConnection;
+            loginForm.appendChild(testButton);
+        });
+    </script>
+</body>
+</html>
